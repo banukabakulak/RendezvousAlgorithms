@@ -1,0 +1,34 @@
+function [initialPose, energyConsume, RoI] = CreateInstance()
+% Generates an instance of CRM with randomly determined RoI and initial
+% agent poses.
+
+global N M n 
+global worldSize seed crazyEnergy
+global isHomogeneous isDenied
+
+rng(seed)
+
+initialPose = worldSize * rand(n*N, 1);
+
+if isHomogeneous
+    energyConsume = crazyEnergy(1) * ones(N, 1);
+else 
+    energyConsume = crazyEnergy(1) * ones(N/2, 1);
+    energyConsume = [energyConsume; crazyEnergy(2) * ones(N/2, 1)];
+end
+
+RoI = [];
+centroid_RoI = worldSize * rand(1);
+for i=1:M
+    RoI = [RoI; [centroid_RoI + worldSize * 0.2 * rand(1, 2) 0]];
+end
+[k,av] = convhull(RoI(:, 1:2));
+plot(RoI(:,1),RoI(:,2),'*')
+hold on
+plot(RoI(k,1),RoI(k,2))
+hold off
+
+RoI = RoI(k, :);
+
+M = size(k, 1) - 1;
+end
