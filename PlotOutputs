@@ -1,0 +1,16 @@
+% plot cumul_consensusTime and cumul_dutyCycle 
+subplot(1, 2, 1)
+plot(cumul_consensusTime)
+hold on 
+plot(ones(simulTime*v1)*avgConsensusTime)
+hold off
+title("Consensus Time (secs)")
+xlabel("Simulation Round")
+
+subplot(1, 2, 2)
+plot(cumul_dutyCycle)
+hold on 
+plot(ones(simulTime*v1)*avgDutyCycle)
+hold off
+title("Duty Cycle (%)")
+xlabel("Simulation Round")
