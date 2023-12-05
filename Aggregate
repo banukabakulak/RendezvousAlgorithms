@@ -1,0 +1,38 @@
+function controlVector = aggregate_v2(t, poseVector)
+% Apply distributed aggregation control on the MAS towards the rendezvous
+% point.
+
+
+global N n 
+global a b c d
+global rendezvousPoint
+
+pDot = zeros(n, N);
+currPose = zeros(n, N);
+
+for i = 1:N
+    currPose(:,i) = poseVector((i-1)*n+1:i*n);
+end
+
+currCentroid = zeros(n,1);
+for i =1:N
+    currCentroid = currCentroid + currPose(:,i)/N;
+end
+currCentroid;
+
+for i = 1:N
+    for j = 1:N
+        if j ~= i
+            dist_ij = currPose(:,i) - currPose(:,j);
+            pDot(:, i) = pDot(:, i) - dist_ij * (a - b*exp(-norm(dist_ij)^2/c));
+        end
+    end
+end
+% pDot
+
+for i = 1:N
+    controlVector((i-1)*n+1:i*n) = pDot(:, i) - d*(currCentroid - rendezvousPoint');
+end
+
+controlVector = controlVector';
+end
