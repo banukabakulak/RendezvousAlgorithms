@@ -1,0 +1,37 @@
+% C-MAS Controller Simulation without any Denied Zones
+
+clear all
+close all
+
+global N M n 
+global a b c d
+global v1 v2 simulTime
+global seed worldSize
+global isHomogeneous isDenied
+
+global initialPose RoI energyConsume
+global rendezvousPoint cumul_rendezvous
+global modelEnergy simulEnergy 
+global cumul_modelEnergy cumul_simulEnergy
+global crazyEnergy
+global avgConsensusTime avgDutyCycle
+global cumul_consensusTime cumul_dutyCycle 
+
+
+N = 6; % # of agents
+M = 12; % # of RoI extreme points
+n = 3; % dimension of the swarm
+
+seed = 1; % seed for the random number generator
+worldSize = 10; % size of the simulation environment
+crazyEnergy = [0.6 0.58];
+isHomogeneous = false;
+isDenied = false;
+
+v1 = 0.1; v2 = 10; % outer and inner control frequncies, Hz
+simulTime = 30; % simulation duration in seconds.
+
+a = 1;
+b = 20;
+c = 0.2;
+d = 12;
