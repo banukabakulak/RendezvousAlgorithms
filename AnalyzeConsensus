@@ -1,0 +1,53 @@
+function AnalyzeConsensus(currPose, rendezvousPoint)
+% Calculate simulation statistics on consensus time and duty cycle. 
+
+global cumul_consensusTime avgConsensusTime cumul_dutyCycle avgDutyCycle 
+global N n
+global simulTime v1 v2
+
+% consensusTime calculations
+epsilon = 0.3;
+consecutiveT = 5;
+consensusTime = 10000;
+
+count = 0;
+isConsensus = true; 
+
+for t = 1:size(currPose,1)
+    isConsensus = true;
+    for i=1:N
+        pose_i = currPose(t, (i-1)*n+1:i*n);
+        dist_i_r = power(pose_i - rendezvousPoint, 2);
+        if sum(dist_i_r) > epsilon 
+         isConsensus = false;
+         break;
+        end
+    end
+    if isConsensus
+        if count == 0
+            count = count + 1;
+            consensusTime = t;
+        elseif t - consensusTime <= consecutiveT
+            count = count + 1;
+        else 
+            count = 1;
+            consensusTime = t;
+        end
+    end
+    if count == consecutiveT
+        break;
+    end
+end
+
+
+cumul_consensusTime = [cumul_consensusTime, consensusTime / v2];
+avgConsensusTime = avgConsensusTime + consensusTime / v2 /(simulTime * v1);
+
+% dutyCycle calculations 
+
+dutyCycle = consensusTime * 100 / (v2/v1);
+
+cumul_dutyCycle = [cumul_dutyCycle, dutyCycle];
+avgDutyCycle = avgDutyCycle + dutyCycle /(simulTime * v1);
+
+end
