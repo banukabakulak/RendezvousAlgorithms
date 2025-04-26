@@ -2,35 +2,33 @@ function ApplyRandomEvent(elapsedTime)
 % Randomly perturb the agent poses, add new agent and remove an agent 
 % during simulation
 
-global N n initialPose 
-global energyConsume crazyEnergy
+global N n 
+global initialPose initialSpeed
 global v1 worldSize seed
+global agentType
 
 rng(seed)
 
  % first event: add new agent and random perturb 
-if elapsedTime == 1/v1 
-    N = N + 1;
-    initialPose = [initialPose; worldSize * 0.45 * rand(n, 1)];
-    energyConsume = [energyConsume; crazyEnergy(randi([1 2], 1, 1))];
+if elapsedTime == 1/v1  
     initialPose = initialPose + 2*rand(n*N, 1)*power(-1, randi([0, 1], 1, 1));
+    agentPose = worldSize * 0.25 * rand(n, 1);
+    [vx, vy, vz] = GenerateInitialSpeed();
+    initialPose = [initialPose; agentPose];
+    initialSpeed = [initialSpeed; [vx vy vz]'];
+    N = N + 1;
+
+    agentType = [agentType; randi([1 2], 1, 1)];
 end
 
 % second event: delete an agent and random perturb 
 if  elapsedTime == 2/v1  
     agentID = randi([1 N],1,1);
     N = N - 1;
-    if agentID == 1
-        initialPose = initialPose((agentID*n+1):end);
-        energyConsume = energyConsume(2:end);
-    elseif agentID == N
-        initialPose = initialPose(1:(agentID-1)*n); 
-        energyConsume = energyConsume(1:(N-1));
-    else
-        initialPose = initialPose([1:(agentID-1)*n, (agentID*n+1):end]);
-        energyConsume = energyConsume([1:(agentID-1), (agentID+1):end]);
-    end
+    initialPose(((agentID-1)*n + 1):agentID*n) = [];
+    initialSpeed(((agentID-1)*n + 1):agentID*n) = [];
     initialPose = initialPose + 2*rand(n*N, 1)*power(-1, randi([0, 1], 1, 1));
+    
+    agentType(agentID) = [];
 end
-
 end
