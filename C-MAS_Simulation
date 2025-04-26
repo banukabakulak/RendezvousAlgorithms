@@ -1,37 +1,100 @@
-% C-MAS Controller Simulation without any Denied Zones
+% C-MAS Controller Simulation for CRM-D Problem 
 
 clear all
 close all
 
 global N M n 
-global a b c d
-global v1 v2 simulTime
-global seed worldSize
-global isHomogeneous isDenied
+global isHomogeneous 
+global isDenied worldSize simulTime seed 
 
-global initialPose RoI energyConsume
+% global agentType weightedCentroid 
+global powerConsume
+global l_speed u_speed 
+global l_acclr u_acclr
+
+global alpha beta gamma delta
+global zeta 
+global psi 
+global w_attr w_track w_obstc w_energy
+global v1 v2 
+
+global initialPose  
+global RoI deniedRegion 
+%global threeDView
+
 global rendezvousPoint cumul_rendezvous
-global modelEnergy simulEnergy 
-global cumul_modelEnergy cumul_simulEnergy
-global crazyEnergy
+
 global avgConsensusTime avgDutyCycle
 global cumul_consensusTime cumul_dutyCycle 
+global cumul_currPose cumul_t
 
-
-N = 6; % # of agents
-M = 12; % # of RoI extreme points
+% General Parameters 
+N = 10; % # of agents
+M = 8; % # of RoI extreme points
 n = 3; % dimension of the swarm
+isHomogeneous = false; % heterogeneous swarm 
+isDenied = true; % denied region exists 
 
+worldSize = 10; % size of the simulation environment, meters 
 seed = 1; % seed for the random number generator
-worldSize = 10; % size of the simulation environment
-crazyEnergy = [0.6 0.58];
-isHomogeneous = false;
-isDenied = false;
 
-v1 = 0.1; v2 = 10; % outer and inner control frequncies, Hz
-simulTime = 30; % simulation duration in seconds.
+% Agent Parameters 
+powerConsume = 8.8; % power consumption, watts 
+l_speed = 0; u_speed = 1; % lower and upper speed limits, meter/sec
+l_acclr = [-0.5 -1]; u_acclr = [0.5 1]; % lower and upper acceleration limits for type-1 and type-2 agents, meter/sec^2
 
-a = 1;
-b = 20;
-c = 0.2;
-d = 12;
+% Controller Parameters 
+v1 = 0.01; v2 = 10; % outer and inner control frequencies, Hz
+simulTime = 2/v1; % simulation duration, secs
+
+alpha = 2.5; beta = 50; gamma = 0.2; delta = 20; % Attraction/repulsion and tracking
+zeta = 100; % Obstacle avoidance, (theta, sigma) is determined in code  
+
+w_attr = 0.4; w_track = 0.6; 
+w_energy = 0.1; w_obstc = 1; % Potential weights 
+psi = 0.8; % path smoothing 
+
+CreateInstance()
+
+PlotInstance()
+
+% Apply C-MAS Controller 
+
+elapsedTime = 0;
+cumul_t = [];
+cumul_currPose = {};
+cumul_rendezvous = [];
+
+cumul_consensusTime = [];
+cumul_dutyCycle = [];
+avgConsensusTime = 0;
+avgDutyCycle = 0;
+
+while elapsedTime < simulTime
+
+   % apply a random event at the time stamp
+    ApplyRandomEvent(elapsedTime);
+
+    timeSpan = elapsedTime:(1/v2):(elapsedTime + 1/v1);
+    elapsedTime = elapsedTime + 1/v1;
+    
+    % calculate the new rendezvous point 
+    FindRendezvousPoint()
+
+    % aggregate towards the new rendezvous point 
+    [t, currPose] = ode23(@aggregate,timeSpan,initialPose);
+
+    initialPose = currPose(end,:)';
+
+    % analyze currPose to detect consensusTime and dutyCycle. 
+    AnalyzeConsensus(currPose, rendezvousPoint);
+
+    cumul_t = [cumul_t; t];
+    cumul_currPose{end+1} = currPose;  
+end
+
+VisualizeOutput()
+
+VisualizeTrajectory()
+
+AnimateRendezvous()
