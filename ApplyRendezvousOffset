@@ -1,0 +1,89 @@
+function ApplyRendezvousOffset()
+% Offsets a denied rendezvous point of the CRM-OPT algorithm 
+% outside the denied region
+
+global initialPose initialSpeed
+global powerConsume
+global rendezvousPoint  
+global RoI deniedRegion
+global N n
+
+
+eta = 1;
+scale = 0.5;
+deniedExtremes = size(deniedRegion,1) - 1;
+epsilon = 0.01;
+
+normSpeed = zeros(N, 1);
+for i = 1:N
+    normSpeed(i) = norm(initialSpeed((n*(i-1)+1):i*n));
+end
+
+% check if the rendezvous point is denied  
+
+denied_A_matrix = [deniedRegion(1:end-1, 1:n-1)'; ones(1,deniedExtremes);eye([1, deniedExtremes])];
+denied_b_matrix = [rendezvousPoint(1:n-1)'; 1; 0];
+
+deniedRendezvous = false;
+
+test = eye([1, deniedExtremes]);
+counter = 0;
+
+while counter < deniedExtremes  
+    lambda_bar = linsolve(denied_A_matrix, denied_b_matrix);
+    counter = counter + 1;
+
+    if lambda_bar + epsilon >= 0
+        deniedRendezvous = true;
+        break
+    end
+    
+    for i=1:deniedExtremes
+        if lambda_bar(i) + epsilon < 0 && test(i) == 0
+            denied_A_matrix(end, :) = zeros(1, deniedExtremes);
+            denied_A_matrix(end, i) = 1;
+            test(i) = 1;
+            break
+        end
+    end
+end 
+
+if deniedRendezvous
+    
+    % calculate step length, rho    
+    rho = 0;
+    for i=2:3 %1:deniedExtremes
+        dist = norm(deniedRegion(i,:) - rendezvousPoint);
+        if dist > rho
+            rho = dist; 
+        end
+    end
+    
+    rho
+    
+    % calculate direction 
+    d_bar = zeros(n-1, 1);
+
+    sum1 = 0;
+    sum2 = 0;
+
+    for l=1:n-1
+        for i=1:N
+            sum1 = sum1 + 2*rho* powerConsume / normSpeed(i) * (initialPose((i-1)*n+l) - rendezvousPoint(l));
+            sum2 = sum2 + 2*rho^2 * powerConsume / normSpeed(i);
+        end
+
+        d_bar(l) = (sum1 - eta) / sum2;
+    end
+
+    RoI_centroid = mean(RoI(1:end-1,1:n-1))';
+    d_bar = d_bar + RoI_centroid;
+
+    % calculate unit direction 
+    d = d_bar / norm(d_bar)
+    
+    % offset the rendezvous point 
+    rendezvousPoint(1:n-1) = rendezvousPoint(1:n-1) + scale*rho*d';
+end
+rendezvousPoint
+end
