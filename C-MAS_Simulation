@@ -20,9 +20,6 @@ global v1 v2
 global initialPose  
 global RoI deniedRegion 
 global rendezvousPoint cumul_rendezvous
-
-global avgConsensusTime avgDutyCycle
-global cumul_consensusTime cumul_dutyCycle 
 global cumul_currPose cumul_t
 
 % General Parameters 
@@ -62,11 +59,6 @@ cumul_t = [];
 cumul_currPose = {};
 cumul_rendezvous = [];
 
-cumul_consensusTime = [];
-cumul_dutyCycle = [];
-avgConsensusTime = 0;
-avgDutyCycle = 0;
-
 while elapsedTime < simulTime
 
    % apply a random event at the time stamp
@@ -82,9 +74,6 @@ while elapsedTime < simulTime
     [t, currPose] = ode23(@aggregate,timeSpan,initialPose);
 
     initialPose = currPose(end,:)';
-
-    % analyze currPose to detect consensusTime and dutyCycle. 
-    AnalyzeConsensus(currPose, rendezvousPoint);
 
     cumul_t = [cumul_t; t];
     cumul_currPose{end+1} = currPose;  
