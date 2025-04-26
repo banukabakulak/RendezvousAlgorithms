@@ -1,17 +1,32 @@
-function controlVector = aggregate_v2(t, poseVector)
+function controlVector = aggregate(t, poseVector)
 % Apply distributed aggregation control on the MAS towards the rendezvous
 % point.
 
 
 global N n 
-global a b c d
+global alpha beta gamma delta
+global zeta sigma theta
+global psi 
+global w_attr w_track w_obstc w_energy
 global rendezvousPoint
+global l_speed u_speed 
+global l_acclr u_acclr
+global v1 v2 
+global initialSpeed
+global agentType
 
-pDot = zeros(n, N);
+epsilon = 0.001;
+
+
+uControl = zeros(n, N);
 currPose = zeros(n, N);
+currSpeed = zeros(n, N);
+acceleration = zeros(n, N);
+pDot = zeros(n, N);
 
 for i = 1:N
-    currPose(:,i) = poseVector((i-1)*n+1:i*n);
+    currPose(:, i) = poseVector((i-1)*n+1:i*n);
+    currSpeed(:, i) = initialSpeed((i-1)*n+1:i*n);
 end
 
 currCentroid = zeros(n,1);
@@ -24,14 +39,41 @@ for i = 1:N
     for j = 1:N
         if j ~= i
             dist_ij = currPose(:,i) - currPose(:,j);
-            pDot(:, i) = pDot(:, i) - dist_ij * (a - b*exp(-norm(dist_ij)^2/c));
+            uControl(:, i) = uControl(:, i) - w_attr * (alpha - beta * exp(-norm(dist_ij)^2/gamma)) * dist_ij;
         end
     end
 end
-% pDot
 
 for i = 1:N
-    controlVector((i-1)*n+1:i*n) = pDot(:, i) - d*(currCentroid - rendezvousPoint');
+    uControl(:, i) =  uControl(:, i) - w_track * delta * (currCentroid - rendezvousPoint') - w_energy * 0;
+end
+
+obstacleDist = zeros(n, N);
+for i = 1:N
+    obstacleDist(:, i) = currPose(:,i) - theta';
+    obstacleDist(3, i) = 0;
+    % obstacleControl = w_obstc * (zeta / sigma) * exp(-norm(obstacleDist(:, i))^2 / sigma) * (obstacleDist(:, i));
+    uControl(:, i) =  uControl(:, i) + w_obstc * (zeta / sigma) * exp(-norm(obstacleDist(:, i))^2 / sigma) * (obstacleDist(:, i));
+end
+
+for i = 1:N
+    normControl = norm(uControl(:, i)); % + epsilon;
+
+    amplitude = 1 * max(l_acclr(agentType(i)), min(1 * normControl, u_acclr(agentType(i))));
+
+    acceleration(:, i)  = amplitude * uControl(:, i) / normControl;
+
+    smoothedSpeed = psi * (currSpeed(:, i) + acceleration(:, i)/ v2) + (1- psi) * currSpeed(:, i);
+
+    normSpeed = norm(smoothedSpeed); % + epsilon;
+
+    pDot(:, i) = max(l_speed, min(0.89 * normSpeed, u_speed)) * smoothedSpeed / normSpeed;
+
+    initialSpeed((i-1)*n+1:i*n) = pDot(:, i);
+end
+
+for i = 1:N
+    controlVector((i-1)*n+1:i*n) = pDot(:, i);
 end
 
 controlVector = controlVector';
