@@ -1,0 +1,78 @@
+function VisualizeOutput()
+% Visualize the simulation results
+
+global n threeDView
+global cumul_rendezvous 
+global cumul_currPose cumul_t
+global RoI deniedRegion worldSize isDenied
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plot rendezvous points during the simulation 
+figure(threeDView)
+hold on
+plot3(cumul_rendezvous(1, 1), cumul_rendezvous(1, 2), cumul_rendezvous(1, 3), 'om', 'MarkerFaceColor', [0.3010 0.7450 0.9330])
+plot3(cumul_rendezvous(2, 1), cumul_rendezvous(2, 2), cumul_rendezvous(2, 3), 'ok', 'MarkerFaceColor', [0.3010 0.7450 0.9330])
+% plot the projections of the rendezvous points
+plot3(cumul_rendezvous(1, 1), cumul_rendezvous(1, 2), 0, 'om', 'MarkerFaceColor', [0.8602 0.9490 0.9866])
+plot3(cumul_rendezvous(2, 1), cumul_rendezvous(2, 2), 0, 'ok', 'MarkerFaceColor', [0.8602 0.9490 0.9866])
+% add dashed lines
+for i = 1:2
+    x = ones(1, 2) * cumul_rendezvous(i, 1);
+    y = ones(1, 2) * cumul_rendezvous(i, 2);
+    z = [cumul_rendezvous(i, 3) 0];
+    plot3(x, y, z, '--', 'Color', [0.7, 0.7, 0.7], 'LineWidth', 0.8);
+end
+hold off
+view([-30 50])
+%view(2)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot cumul_currPose at each simulation round 
+subplot(1, 1, 1)
+plot(0,0)
+hold on
+round = length(cumul_currPose);
+roundTime = length(cumul_currPose{1});
+for r =1:round  
+    for i = 1:size(cumul_currPose{r},2)/n
+        plot(cumul_t((r-1)*roundTime + 1:r*roundTime), cumul_currPose{r}(:,(i-1)*n + 1), 'r')
+        plot(cumul_t((r-1)*roundTime + 1:r*roundTime), cumul_currPose{r}(:,(i-1)*n + 2), 'g')
+        plot(cumul_t((r-1)*roundTime + 1:r*roundTime), cumul_currPose{r}(:,(i-1)*n + 3), 'b')
+    end 
+end
+hold off
+legend('x pose', 'y pose', 'z pose') 
+xlabel('Simulation Time (secs)')
+ylabel('Agent Position (m)')
+title('MAS Position Convergence')
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot MAS motion at each simulation round 
+figure
+round = length(cumul_currPose);
+for r =1:round
+    subplot(1, round,r)
+    plot3(0,0,0) 
+    hold on
+    for i = 1:size(cumul_currPose{r},2)/n
+        plot3(cumul_currPose{r}(1,(i-1)*n+1), cumul_currPose{r}(1, (i-1)*n+2), cumul_currPose{r}(1, (i-1)*n+3), 'og')
+        plot3(cumul_currPose{r}(:,(i-1)*n+1), cumul_currPose{r}(:, (i-1)*n+2), cumul_currPose{r}(:, (i-1)*n+3), '.b')
+        plot3(cumul_currPose{r}(end,(i-1)*n+1), cumul_currPose{r}(end, (i-1)*n+2), cumul_currPose{r}(end, (i-1)*n+3), '*r')
+        plot3(cumul_rendezvous(r, 1), cumul_rendezvous(r, 2), cumul_rendezvous(r, 3), 'p','LineWidth',2,...
+    'MarkerSize',12,...
+    'MarkerEdgeColor',[1 0.5 0],...
+    'MarkerFaceColor',[1 0.5 0])
+    end
+    if r == 2
+        i = size(cumul_currPose{r},2)/n;
+        plot3(cumul_currPose{2}(1,(i-1)*n+1), cumul_currPose{2}(1, (i-1)*n+2), cumul_currPose{2}(1, (i-1)*n+3), 'oy','MarkerFaceColor',[1 0.5 0])
+    end
+    plot(RoI(:,1),RoI(:,2), 'Color', [0.9290 0.6940 0.1250])
+    if isDenied
+        plot(deniedRegion(:,1),deniedRegion(:,2), 'Color', [0.4940 0.1840 0.5560])
+    end
+    hold off 
+    axis([0 worldSize 0 worldSize 0 worldSize])
+     view([-45 45])
+end 
+end
