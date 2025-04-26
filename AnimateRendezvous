@@ -1,0 +1,159 @@
+function AnimateRendezvous()
+% Animates MAS rendezvous in 3D, 2D and Zoomed 2D.
+% Records the animation video as avi.
+
+global n
+global cumul_rendezvous 
+global cumul_currPose 
+global RoI deniedRegion worldSize isDenied
+
+% Create a video writer object
+videoFile = 'MAS_rendezvous_animation';  % Output file name
+v = VideoWriter(videoFile);
+v.FrameRate = 30;
+open(v);
+
+figure
+numRounds = length(cumul_currPose);
+rows = numRounds;
+cols = 3;
+zoomRadius = 1.5;  % Radius around rendezvous point for zoomed view
+
+for r = 1:numRounds
+    numAgents = size(cumul_currPose{r}, 2) / n;
+
+    % Subplot indices
+    idx3D = (r - 1) * cols + 1;
+    idx2D = (r - 1) * cols + 2;
+    idxZoom = (r - 1) * cols + 3;
+
+    rendezvousPt = cumul_rendezvous(r, :);
+
+    % 3D View
+    subplot(rows, cols, idx3D)
+    hold on
+    cla
+    title(sprintf('Round %d \n3D View', r))
+    xlabel('X'), ylabel('Y'), zlabel('Z')
+    axis([0 worldSize 0 worldSize 0 worldSize])
+    view([-45 25])
+    axis equal
+
+    % 2D View
+    subplot(rows, cols, idx2D)
+    hold on
+    cla
+    title(sprintf('Round %d \n2D View', r))
+    xlabel('X'), ylabel('Y')
+    axis([0 worldSize 0 worldSize])
+    axis equal
+
+    % Zoomed 2D View
+    subplot(rows, cols, idxZoom)
+    hold on
+    cla
+    title(sprintf('Round %d \nZoomed 2D View', r))
+    xlabel('X'), ylabel('Y')
+    axis([rendezvousPt(1)-zoomRadius, rendezvousPt(1)+zoomRadius, ...
+          rendezvousPt(2)-zoomRadius, rendezvousPt(2)+zoomRadius])
+    axis equal
+
+    % Region overlays for 3D, 2D, and zoomed 2D views
+    for p = [idx3D, idx2D, idxZoom]
+        subplot(rows, cols, p)
+        if mod(p, 3) == 1  % 3D view
+            plot3(RoI(:, 1), RoI(:, 2), zeros(size(RoI, 1),1), 'Color', [0.9290 0.6940 0.1250])
+            if isDenied
+                plot3(deniedRegion(:, 1), deniedRegion(:, 2), zeros(size(deniedRegion, 1),1), 'Color', [0.4940 0.1840 0.5560])
+            end
+            plot3(rendezvousPt(1), rendezvousPt(2), rendezvousPt(3), 'p', ...
+                  'LineWidth', 2, 'MarkerSize', 12, ...
+                  'MarkerEdgeColor', [1 0.5 0], 'MarkerFaceColor', [1 0.5 0])
+        else  % 2D and Zoomed-in 2D
+            plot(RoI(:, 1), RoI(:, 2), 'Color', [0.9290 0.6940 0.1250])
+            if isDenied
+                plot(deniedRegion(:, 1), deniedRegion(:, 2), 'Color', [0.4940 0.1840 0.5560])
+            end
+            plot(rendezvousPt(1), rendezvousPt(2), 'p', ...
+                  'LineWidth', 2, 'MarkerSize', 12, ...
+                  'MarkerEdgeColor', [1 0.5 0], 'MarkerFaceColor', [1 0.5 0])
+        end
+    end
+
+
+    % Initialize agent handles
+    trajHandles3D = gobjects(numAgents, 1);
+    currHandles3D = gobjects(numAgents, 1);
+    trajHandles2D = gobjects(numAgents, 1);
+    currHandles2D = gobjects(numAgents, 1);
+    trajHandlesZoom = gobjects(numAgents, 1);
+    currHandlesZoom = gobjects(numAgents, 1);
+
+    for i = 1:numAgents
+        isNew = (r == 2) && (i == numAgents);
+        color = isNew * [1 0.5 0] + ~isNew * [0 0 1];
+
+        subplot(rows, cols, idx3D)
+        trajHandles3D(i) = plot3(NaN, NaN, NaN, '.', 'Color', color);
+        currHandles3D(i) = plot3(NaN, NaN, NaN, 'og');
+
+        subplot(rows, cols, idx2D)
+        trajHandles2D(i) = plot(NaN, NaN, '.', 'Color', color);
+        currHandles2D(i) = plot(NaN, NaN, 'og');
+
+        subplot(rows, cols, idxZoom)
+        trajHandlesZoom(i) = plot(NaN, NaN, '.', 'Color', color);
+        currHandlesZoom(i) = plot(NaN, NaN, 'og');
+    end
+
+    % Animate
+    for t = 1:size(cumul_currPose{r}, 1)
+        for i = 1:numAgents
+            x = cumul_currPose{r}(1:t, (i-1)*n+1);
+            y = cumul_currPose{r}(1:t, (i-1)*n+2);
+            z = cumul_currPose{r}(1:t, (i-1)*n+3);
+
+            isNew = (r == 2) && (i == numAgents);
+
+            subplot(rows, cols, idx3D)
+            set(trajHandles3D(i), 'XData', x, 'YData', y, 'ZData', z);
+            set(currHandles3D(i), 'XData', x(end), 'YData', y(end), 'ZData', z(end), ...
+                'MarkerFaceColor', isNew * [1 0.5 0]);
+
+            subplot(rows, cols, idx2D)
+            set(trajHandles2D(i), 'XData', x, 'YData', y);
+            set(currHandles2D(i), 'XData', x(end), 'YData', y(end), ...
+                'MarkerFaceColor', isNew * [1 0.5 0]);
+
+            subplot(rows, cols, idxZoom)
+            set(trajHandlesZoom(i), 'XData', x, 'YData', y);
+            set(currHandlesZoom(i), 'XData', x(end), 'YData', y(end), ...
+                'MarkerFaceColor', isNew * [1 0.5 0]);
+        end
+        drawnow
+        frame = getframe(gcf);
+        writeVideo(v, frame);
+    end
+
+    % Final positions
+    for i = 1:numAgents
+        isNew = (r == 2) && (i == numAgents);
+        xFinal = cumul_currPose{r}(end, (i-1)*n+1);
+        yFinal = cumul_currPose{r}(end, (i-1)*n+2);
+        zFinal = cumul_currPose{r}(end, (i-1)*n+3);
+
+        subplot(rows, cols, idx3D)
+        plot3(xFinal, yFinal, zFinal, '*r', 'MarkerFaceColor', isNew * [1 0.5 0]);
+
+        subplot(rows, cols, idx2D)
+        plot(xFinal, yFinal, '*r', 'MarkerFaceColor', isNew * [1 0.5 0]);
+
+        subplot(rows, cols, idxZoom)
+        plot(xFinal, yFinal, '*r', 'MarkerFaceColor', isNew * [1 0.5 0]);
+    end
+end
+
+close(v);
+disp(['✅ Video saved as ', videoFile]);
+
+end
