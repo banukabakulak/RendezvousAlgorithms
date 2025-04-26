@@ -1,0 +1,51 @@
+function PlotInstance()
+% Plots the simulation instance 
+
+global N n
+global initialPose RoI deniedRegion
+global worldSize isDenied
+global topView threeDView
+global agentType weightedCentroid
+global k1 k2
+
+
+% Top View Plot the instance
+topView = figure; 
+hold on
+plot(RoI(:,1),RoI(:,2),'b*')
+plot(RoI(k1,1),RoI(k1,2), 'Color', [0.9290 0.6940 0.1250])
+if isDenied
+    plot(deniedRegion(:,1),deniedRegion(:,2),'*', 'MarkerEdge', [0.8500 0.3250 0.0980])
+    plot(deniedRegion(k2,1),deniedRegion(k2,2), 'Color', [0.4940 0.1840 0.5560])
+end
+for i=1:N
+    if agentType(i) == 1
+        plot(initialPose((i-1)*n+1), initialPose((i-1)*n+2), '>','MarkerEdge','g','MarkerFace',[0.4660 0.6740 0.1880])
+    elseif agentType(i) == 2
+        plot(initialPose((i-1)*n+1), initialPose((i-1)*n+2), '>','MarkerEdge','b','MarkerFace',[0.4660 0.6740 0.1880])
+    end
+end 
+plot(weightedCentroid(1), weightedCentroid(2), 'ro', 'MarkerFaceColor', [0.8500 0.3250 0.0980])
+axis([0 worldSize 0 worldSize])
+title('Top View')
+hold off
+
+% 3D Plot the instance
+threeDView = figure
+plot(RoI(:,1),RoI(:,2), 'Color', [0.9290 0.6940 0.1250])
+hold on 
+for i=1:N 
+    if agentType(i) == 1
+        plot3(initialPose((i-1)*n+1), initialPose((i-1)*n+2), initialPose(i*n), '>','MarkerEdge','m','MarkerFace',[0.9290,0.6940, 0.1250])
+    elseif agentType(i) == 2
+        plot3(initialPose((i-1)*n+1), initialPose((i-1)*n+2), initialPose(i*n), '>','MarkerEdge','b','MarkerFace',[0.9290,0.6940, 0.1250])
+    end
+end
+if isDenied
+    plot(deniedRegion(:,1),deniedRegion(:,2), 'Color', [0.4940 0.1840 0.5560])
+end
+axis([0 worldSize 0 worldSize 0 worldSize])
+view([-45 45])
+title('3D View')
+hold off
+end
