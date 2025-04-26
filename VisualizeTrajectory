@@ -1,0 +1,99 @@
+function VisualizeTrajectory()
+% Visualize the agent trajectories in 3D and 2D
+
+global n
+global cumul_rendezvous 
+global cumul_currPose 
+global RoI deniedRegion worldSize isDenied
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Animate trajectory in 3D
+figure
+round = length(cumul_currPose);
+for r = 1:round
+    subplot(1, round, r)
+    plot3(0, 0, 0)  % Plot origin or initial point
+    hold on
+    % Plot Region of Interest and Denied Region
+    plot(RoI(:, 1), RoI(:, 2), 'Color', [0.9290 0.6940 0.1250])
+    if isDenied
+        plot(deniedRegion(:, 1), deniedRegion(:, 2), 'Color', [0.4940 0.1840 0.5560])
+    end
+
+    plot3(cumul_rendezvous(r, 1), cumul_rendezvous(r, 2), cumul_rendezvous(r, 3), 'p', 'LineWidth', 2, ...
+            'MarkerSize', 12, 'MarkerEdgeColor', [1 0.5 0], 'MarkerFaceColor', [1 0.5 0])
+
+    for t = 1:size(cumul_currPose{r}, 1)
+    % Loop through the poses in cumul_currPose and animate their appearance
+    for i = 1:size(cumul_currPose{r}, 2) / n
+        % Plot the current pose for agents
+        if t == 1
+            plot3(cumul_currPose{r}(1, (i-1)*n+1), cumul_currPose{r}(1, (i-1)*n+2), cumul_currPose{r}(1, (i-1)*n+3), 'og')
+            
+                % Special case for the second round
+            if r == 2
+                ii = size(cumul_currPose{r}, 2) / n;
+                plot3(cumul_currPose{2}(1, (ii-1)*n+1), cumul_currPose{2}(1, (ii-1)*n+2), cumul_currPose{2}(1, (ii-1)*n+3), 'oy', 'MarkerFaceColor', [1 0.5 0])
+           end
+        elseif t == size(cumul_currPose{r}, 1) 
+            plot3(cumul_currPose{r}(end, (i-1)*n+1), cumul_currPose{r}(end, (i-1)*n+2), cumul_currPose{r}(end, (i-1)*n+3), '*r')
+        elseif t < size(cumul_currPose{r}, 1) / (3*r)
+            plot3(cumul_currPose{r}(t, (i-1)*n+1), cumul_currPose{r}(t, (i-1)*n+2), cumul_currPose{r}(t, (i-1)*n+3), '.b')
+        end    
+    end
+        % Add a small pause to animate
+        pause(0.005);  % Adjust pause time for desired speed of animation
+    end
+
+    
+    % Set axis limits and view
+    hold off 
+    axis([0 worldSize 0 worldSize 0 worldSize])
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Animate trajectory in 2D
+figure
+round = length(cumul_currPose);
+for r = 1:round
+    subplot(2, round, 2*r-1)
+    plot3(0, 0, 0)  % Plot origin or initial point
+    view(2)
+    hold on
+    % Plot Region of Interest and Denied Region
+    plot(RoI(:, 1), RoI(:, 2), 'Color', [0.9290 0.6940 0.1250])
+    if isDenied
+        plot(deniedRegion(:, 1), deniedRegion(:, 2), 'Color', [0.4940 0.1840 0.5560])
+    end
+
+    plot3(cumul_rendezvous(r, 1), cumul_rendezvous(r, 2), cumul_rendezvous(r, 3), 'p', 'LineWidth', 2, ...
+            'MarkerSize', 12, 'MarkerEdgeColor', [1 0.5 0], 'MarkerFaceColor', [1 0.5 0])
+
+    for t = 1:size(cumul_currPose{r}, 1)
+    % Loop through the poses in cumul_currPose and animate their appearance
+    for i = 1:size(cumul_currPose{r}, 2) / n
+        % Plot the current pose for agents
+        if t == 1
+            plot3(cumul_currPose{r}(1, (i-1)*n+1), cumul_currPose{r}(1, (i-1)*n+2), cumul_currPose{r}(1, (i-1)*n+3), 'og')
+            
+                % Special case for the second round
+            if r == 2
+                ii = size(cumul_currPose{r}, 2) / n;
+                plot3(cumul_currPose{2}(1, (ii-1)*n+1), cumul_currPose{2}(1, (ii-1)*n+2), cumul_currPose{2}(1, (ii-1)*n+3), 'oy', 'MarkerFaceColor', [1 0.5 0])
+           end
+        elseif t == size(cumul_currPose{r}, 1) 
+            plot3(cumul_currPose{r}(end, (i-1)*n+1), cumul_currPose{r}(end, (i-1)*n+2), cumul_currPose{r}(end, (i-1)*n+3), '*r')
+        elseif t < size(cumul_currPose{r}, 1) / (3*r)
+            plot3(cumul_currPose{r}(t, (i-1)*n+1), cumul_currPose{r}(t, (i-1)*n+2), cumul_currPose{r}(t, (i-1)*n+3), '.b')
+        end    
+    end
+        % Add a small pause to animate
+        pause(0.005);  % Adjust pause time for desired speed of animation
+    end
+
+    
+    % Set axis limits and view
+    hold off 
+    axis([0 worldSize 0 worldSize 0 worldSize])  
+end
+end
