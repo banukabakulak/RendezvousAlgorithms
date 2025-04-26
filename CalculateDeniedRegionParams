@@ -1,0 +1,23 @@
+function [theta, sigma] = CalculateDeniedRegionParams()
+
+global deniedRegion
+
+theta = 0;
+sigma = 0;
+
+[row, col] = size(deniedRegion);
+
+% theta is the centroid of the denied region
+for i =1:row
+    theta = theta + deniedRegion(i,:)/row;
+end
+theta;
+
+for i =1:row
+    deviation = norm(deniedRegion(i,:) - theta);
+    if deviation > sigma 
+        sigma = deviation;
+    end
+end 
+sigma;
+end
