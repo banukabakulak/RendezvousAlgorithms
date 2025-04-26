@@ -1,0 +1,16 @@
+function [vx, vy, vz] = GenerateInitialSpeed()
+
+% Number of agents
+N = 1;
+
+% Random values
+v     = 0.5 + 0.3 * rand(N, 1);     % Speed in [0.5, 0.8]
+yaw   = deg2rad(90 * rand(N, 1));   % Yaw in radians [0, 90]
+pitch = deg2rad(45 * rand(N, 1));   % Pitch in radians [0, 45]
+
+% Velocity components
+vx = v .* cos(pitch) .* cos(yaw);
+vy = v .* cos(pitch) .* sin(yaw);
+vz = v .* sin(pitch);
+
+end
