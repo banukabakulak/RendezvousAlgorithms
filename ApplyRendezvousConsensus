@@ -1,0 +1,23 @@
+function ApplyRendezvousConsensus()
+% Implements the update rule to reach a rendezvous consensus
+
+global rendezvousPoints rendezvousPoint
+global commNetwork
+global N
+
+
+maxT = 100;
+
+for t = 1:maxT
+    for i = 1:N
+        for j = 1:N
+            if ~(i==j) && (commNetwork(j, i) == 1) % j \in N_i
+                rendezvousPoints(i, :) = rendezvousPoints(i, :) + ...
+                                         (rendezvousPoints(j, :) - rendezvousPoints(i, :)) / (sum(commNetwork(:, i)) * (t+1));
+            end
+        end
+    end
+end
+
+rendezvousPoint = sum(rendezvousPoints) / N;
+end
