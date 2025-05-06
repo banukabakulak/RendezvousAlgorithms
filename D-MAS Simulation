@@ -1,0 +1,89 @@
+% D-MAS Controller Simulation for DRM_i-D Problem 
+
+clear all
+close all
+
+global N M n 
+global isHomogeneous 
+global isDenied worldSize simulTime seed
+
+global powerConsume commRange
+global l_speed u_speed 
+global l_acclr u_acclr
+
+global alpha beta gamma delta
+global zeta 
+global psi 
+global w_attr w_track w_obstc w_energy
+global v1 v2
+
+global initialPose  
+global RoI deniedRegion 
+global cumul_rendezvous 
+global cumul_currPose cumul_t
+
+% General Parameters 
+N = 10; % # of agents
+M = 8; % # of RoI extreme points
+n = 3; % dimension of the swarm
+isHomogeneous = false; % heterogeneous swarm 
+isDenied = true; % denied region exists 
+
+worldSize = 10; % size of the simulation environment, meters 
+seed = 1; % seed for the random number generator
+
+% Agent Parameters 
+powerConsume = 8.8; % power consumption, watts 
+l_speed = 0; u_speed = 1; % lower and upper speed limits, meter/sec
+l_acclr = [-0.5 -1]; u_acclr = [0.5 1]; % lower and upper acceleration limits for type-1 and type-2 agents, meter/sec^2
+commRange = [8.5 9.5]; % communication range of agent types, m
+
+% Controller Parameters 
+v1 = 0.01; v2 = 10; % outer and inner control frequencies, Hz
+simulTime = 2/v1; % simulation duration, secs
+
+alpha = 2.5; beta = 50; gamma = 0.2; delta = 20; % Attraction/repulsion and tracking
+zeta = 100; % Obstacle avoidance, (theta, sigma) is determined in code  
+
+w_attr = 0.4; w_track = 0.6; 
+w_energy = 0.1; w_obstc = 1; % Potential weights 
+psi = 0.8; % path smoothing
+
+CreateInstanceDistributed()
+
+PlotInstance()
+
+% Apply D-MAS Controller 
+elapsedTime = 0;
+cumul_t = [];
+cumul_currPose = {};
+cumul_rendezvous = [];
+
+while elapsedTime < simulTime
+
+    % apply a random event at the time stamp
+    ApplyRandomEventDistributed(elapsedTime);
+
+    % construct the commNetwork matrix
+    ConstructCommNetwork()
+    
+    timeSpan = elapsedTime:(1/v2):(elapsedTime + 1/v1);
+    elapsedTime = elapsedTime + 1/v1;
+
+    % calculate the new rendezvous point 
+    FindRendezvousPointDistributed()
+
+    % aggregate towards the new rendezvous point 
+    [t, currPose] = ode23(@aggregate,timeSpan,initialPose);
+    
+    initialPose = currPose(end,:)';
+  
+    cumul_t = [cumul_t; t];
+    cumul_currPose{end+1} = currPose;  
+end
+
+VisualizeOutput()
+
+VisualizeTrajectory()
+
+AnimateRendezvous()
