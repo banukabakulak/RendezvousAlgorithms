@@ -1,0 +1,66 @@
+function FindRendezvousPointDistributed()
+% Determines an energy effcient rendezvous point 
+% with H-DRM_i-D Algorithm for each agent 
+
+global N M n RoI powerConsume 
+global initialPose initialSpeed
+global rendezvousPoints rendezvousPoint
+global cumul_rendezvous 
+global commNetwork isDenied
+
+scale = 10e2;
+rendezvousPoints = zeros(N, n);
+
+normSpeed = zeros(N, 1);
+for i = 1:N
+    normSpeed(i) = norm(initialSpeed((n*(i-1)+1):i*n));
+end
+
+for i=1:N
+% determine the rendezvous point for agent i and update the
+% rendezvousPoint matrix. 
+A_matrix = zeros(2*M+1, 2*M+1);
+A_matrix(M+1, 1:M) = 1;
+A_matrix(1:M, M+1) = 1;
+for ii = (M+2):(2*M+1)
+    A_matrix(ii - M - 1, ii) = -1;
+    A_matrix(ii, ii) = 1;
+end
+for k = 1:M
+    for kk = 1:M
+        sum = 0;
+        for j = 1:N
+            for l = 1:n
+                sum = sum + 2 * powerConsume / normSpeed(j) * RoI(k,l) * RoI(kk,l) * commNetwork(j, i) / scale;
+            end
+        end
+        A_matrix(k, kk) = sum;
+    end
+end
+A_matrix;
+b_matrix = zeros(2*M+1, 1);
+b_matrix(M+1) = 1;
+b_matrix(M+2:end) = 0;
+for k = 1:M
+    sum = 0;
+    for j = 1:N
+        for l = 1:n
+            sum = sum + 2 * powerConsume / normSpeed(j) * RoI(k,l) * initialPose((j-1)*n+l) * commNetwork(j, i) / scale;
+        end
+    end
+    b_matrix(k) = sum;
+end
+b_matrix;
+
+ApplyDRM_i_D_Heur(A_matrix, b_matrix, i);
+end
+
+% apply update rule to reach rendezvous consensus 
+ApplyRendezvousConsensus();
+
+% offset a denied  consensed rendezvous point
+if isDenied
+    ApplyRendezvousOffset()
+end
+cumul_rendezvous = [cumul_rendezvous; rendezvousPoint];
+end
