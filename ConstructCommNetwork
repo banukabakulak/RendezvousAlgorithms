@@ -1,0 +1,31 @@
+function ConstructCommNetwork()
+% updates the communication network matrix for 
+% the current agent positions.
+global N n
+global commNetwork 
+global initialPose 
+global agentCommRange
+
+commNetwork = zeros(N, N);
+distMatrix = zeros(N, N);
+% calculate the distMatrix for the initialPose 
+for i=1:N
+    for j=i+1:N
+        pose_i = initialPose((i-1)*n+1:i*n);
+        pose_j = initialPose((j-1)*n+1:j*n);
+        distMatrix(i, j) = norm(pose_i - pose_j);
+        distMatrix(j, i) = distMatrix(i, j);     
+    end
+end
+% update the commNetwork for distMatrix 
+for i=1:N
+    for j=1:N
+        %if ~(i==j)
+            if distMatrix(j, i) < agentCommRange(j) % j \in N_i
+                commNetwork(j, i) = 1;
+            end
+        %end
+    end
+end
+commNetwork
+end
